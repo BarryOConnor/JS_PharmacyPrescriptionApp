@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // user collection can only be read by an authorised member of staff and edited by an administrator
+    match /users/{userID} {
+      allow read, update: if request.auth.uid != null && (request.auth.token.role == "Technician" || request.auth.token.role == "Pharmacist" || request.auth.token.role == "Administrator");
+      allow create, delete: if request.auth.uid != null && request.auth.token.role == "Administrator";
+    }
+
+    // rowcounts (count of user types) can only be edited by an administrator
+    match /rowcounts/all {
+      allow read, update: if request.auth.uid != null && (request.auth.token.role == "Administrator");
+      allow create, delete: if false;
+    }
+
+    // approvals can only be created by a technician or pharmacist and only read and updated (approved) by a pharmacist
+    match /approvals/all {
+      allow read, update: if request.auth.uid != null && (request.auth.token.role == "Technician" || request.auth.token.role == "Pharmacist");
+      allow delete, create: if false;
+    }
+
+    // prescription can only be read and updated by a technician or pharmacist but can be created by anyone - in a production system, a role would be allocated for System One
+    // but this was impractical for the prototype
+    match /prescriptions/{prescriptionID} {
+      allow read, update: if request.auth.uid != null && (request.auth.token.role == "Technician" || request.auth.token.role == "Pharmacist");
+      allow create: if true;
+      allow delete: if false;
+    }
+
+    // repeats collection can only be read and updated by a technician or pharmacist. Other operations only carried out by the system
+    match /repeats/{repeatID} {
+      allow read, update: if request.auth.uid != null && (request.auth.token.role == "Technician" || request.auth.token.role == "Pharmacist");
+      allow create, delete: if false;
+    }
+
+    // medications collection can only be read and updated by a technician or pharmacist. Other operations only carried out by the system
+    match /medications/all {
+      allow read, update: if true || request.auth.uid != null && (request.auth.token.role == "Technician" || request.auth.token.role == "Pharmacist");
+      allow create, delete: if false;
+    }
+
+    // patients collection can only be read and updated by a technician or pharmacist. Other operations only carried out by the system
+    match /patients/{patientID} {
+      allow read, update: if request.auth.uid != null && (request.auth.token.role == "Technician" || request.auth.token.role == "Pharmacist");
+      allow create, delete: if false;
+    }
+
+    // gps6 collection can only be read and updated by a technician or pharmacist. Other operations only carried out by the system
+    match /gps/{gpID} {
+      allow read, update: if request.auth.uid != null && (request.auth.token.role == "Technician" || request.auth.token.role == "Pharmacist");
+      allow create, delete: if false;
+    }
+  }
+}
